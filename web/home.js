@@ -1066,8 +1066,8 @@
     if (st.zone === Z.LANG) { closeLanguages(false); return; }
     if (sheetOpen()) { closeSheets(); return; }
     if (st.zone === Z.DRAWER) { closeDrawer(); return; }
-    if (st.zone !== Z.SHELF && shelf.length) { st.zone = Z.SHELF; updateFocus(); return; }
-    TV.back();
+    // On the shelf, Back stays put, as on Android: a home screen has nowhere to go back to (Home leaves it).
+    if (st.zone !== Z.SHELF && shelf.length) { st.zone = Z.SHELF; updateFocus(); }
   }
 
   /** The pointer focuses what it's over (the Magic Remote, or a mouse when previewing). */

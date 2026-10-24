@@ -1,5 +1,5 @@
 /*
- * The TV's side of the web home screen: its apps, opening one, its inputs, its settings, the Back key, its time zone.
+ * The TV's side of the web home screen: its apps, opening one, its inputs, its settings, its keys, its time zone.
  *  - LG webOS: the TV's service bus (Luna), the same calls LG's launcher makes.
  *  - Samsung Tizen: Tizen's web APIs (tizen.application for the apps, tizen.tvwindow for the inputs).
  *  - A desktop browser: a stand-in with sample apps, so the screen can be previewed and tested on a computer.
@@ -392,15 +392,6 @@ var TV = (function () {
 
     /** LG: keeps the TV's screensaver away while ours will take over (`hold` says when). */
     holdScreenSaver: holdScreenSaver,
-
-    /** Back on the first screen: back to wherever the person came from. */
-    back: function () {
-      if (samsung) {
-        try { window.tizen.application.getCurrentApplication().hide(); } catch (e) {}
-        return;
-      }
-      if (window.PalmSystem && window.PalmSystem.platformBack) window.PalmSystem.platformBack();
-    },
 
     /** The TV's time zone ("America/Sao_Paulo"), or ''. */
     zone: function () {
