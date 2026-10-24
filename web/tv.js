@@ -117,15 +117,15 @@ var TV = (function () {
 
   // Samsung apps whose iconPath is Tizen's generic pinwheel (a valid image, so onerror never fires): our own icons.
   // Seen on a 2018 NU7675 (Tizen 4); Smart Hub draws their real icons from a folder apps can't read. On a 2017
-  // MU6100 (Tizen 3) no iconPath loads at all, so common apps get a logo here: Simple Icons' (CC0), cropped and tinted
-  // for the tiles, with a width and height so old WebKit sizes them like PNGs.
+  // MU6100 (Tizen 3) no iconPath loads at all, so common apps get a logo here: vector wordmarks (Wikimedia Commons)
+  // and Simple Icons' (CC0), cropped and tinted for the tiles, with a width and height so old WebKit sizes them like PNGs.
   var SAMSUNG_ICONS = {
-    '9Ur5IzDKqV.TizenYouTube': 'icons/youtube.png',
-    'evKhCgZelL.AmazonIgnitionLauncher2': 'icons/prime.png',
-    'org.tizen.primevideo': 'icons/prime.png',
+    '9Ur5IzDKqV.TizenYouTube': 'icons/youtube.svg',
+    'evKhCgZelL.AmazonIgnitionLauncher2': 'icons/primevideo.svg',
+    'org.tizen.primevideo': 'icons/primevideo.svg',
     'RN1MCdNq8t.Netflix': 'icons/netflix.svg',
     'org.tizen.netflix-app': 'icons/netflix.svg',
-    'NvZ26VG9Yw.HBOGOLAG': 'icons/max.svg',
+    'NvZ26VG9Yw.HBOGOLAG': 'icons/hbomax.svg',
     'rJeHak5zRg.Spotify': 'icons/spotify.svg',
     'cexr1qp97S.Deezer': 'icons/deezer.svg',
     '5SLwh7m3En.TizenYouTubeKids': 'icons/youtubekids.svg',
@@ -162,15 +162,18 @@ var TV = (function () {
   // one app id: these are checked one by one there. Their icons can't be read, so they get our logo where web/icons
   // has one, as on Samsung, and otherwise their name on the brand's color: [id, title, logo, color].
   var KNOWN = [
-    ['netflix', 'Netflix', 'icons/netflix.svg'], ['youtube.leanback.v4', 'YouTube', 'icons/youtube.png'],
-    ['amazon', 'Prime Video', 'icons/prime.png'], ['com.disney.disneyplus-prod', 'Disney+'],
-    ['com.wbd.stream', 'HBO Max', 'icons/max.svg'], ['com.hbo.hbomax', 'Max', 'icons/max.svg'],
-    ['com.apple.appletv', 'Apple TV'], ['hulu', 'Hulu'], ['com.peacock.tv', 'Peacock'], ['com.nfl.app', 'NFL'],
-    ['globoplaywebos', 'Globoplay'], ['spotify-beehive', 'Spotify', 'icons/spotify.svg'],
-    ['tv.twitch.tv.starshot.lg', 'Twitch', '', '#9146FF'], ['cdp-30', 'Plex', '', '#E5A00D'],
-    ['org.jellyfin.webos', 'Jellyfin', 'icons/jellyfin.svg'], ['com.crunchyroll.webapp', 'Crunchyroll', '', '#F47521'],
+    ['netflix', 'Netflix', 'icons/netflix.svg'], ['youtube.leanback.v4', 'YouTube', 'icons/youtube.svg'],
+    ['amazon', 'Prime Video', 'icons/primevideo.svg'], ['com.disney.disneyplus-prod', 'Disney+', 'icons/disneyplus.svg'],
+    ['com.wbd.stream', 'HBO Max', 'icons/hbomax.svg'], ['com.hbo.hbomax', 'Max', 'icons/hbomax.svg'],
+    ['com.apple.appletv', 'Apple TV', 'icons/appletv.svg'], ['hulu', 'Hulu'], ['com.peacock.tv', 'Peacock'], ['com.nfl.app', 'NFL'],
+    ['globoplaywebos', 'Globoplay', 'icons/globoplay.svg'], ['spotify-beehive', 'Spotify', 'icons/spotify.svg'],
+    ['tv.twitch.tv.starshot.lg', 'Twitch', 'icons/twitch.svg', '#9146FF'], ['cdp-30', 'Plex', 'icons/plex.svg', '#282A2D'],
+    ['org.jellyfin.webos', 'Jellyfin', 'icons/jellyfin.svg'], ['com.crunchyroll.webapp', 'Crunchyroll', 'icons/crunchyroll.svg', '#F47521'],
     ['com.webos.app.browser', 'Web Browser', '', '#3A7BD5']
   ];
+  // LG's own icons are 130 pixels, a blur on a 4K tile: where we have a vector logo, it wins. {id: [logo, color]}
+  var LOGOS = {};
+  KNOWN.forEach(function (k) { if (k[2]) LOGOS[k[0]] = [k[2], k[3] || '']; });
 
   function knownApps(done) {
     var found = [], left = KNOWN.length, sent = false;
@@ -313,7 +316,9 @@ var TV = (function () {
         for (var i = 0; i < points.length; i++) {
           var p = points[i];
           if (!p.id || p.id === self || HIDDEN.test(p.id)) continue;
-          out.push({id: p.id, title: p.title || p.id, icon: p.largeIcon || p.icon || '', color: p.bgColor || p.iconColor || ''});
+          var logo = LOGOS[p.id];
+          out.push({id: p.id, title: p.title || p.id, icon: logo ? logo[0] : p.largeIcon || p.icon || '',
+                    color: (logo && logo[1]) || p.bgColor || p.iconColor || ''});
         }
         return out;
       }

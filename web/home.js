@@ -231,6 +231,20 @@
     }
   }
 
+  /**
+   * Our logos are sized for the eye, not to fill a box: the wider one is, the shorter (height ∝ aspect^-0.35, between
+   * the same height and the same area), so a long wordmark (Netflix) and a compact mark (Apple TV) weigh the same.
+   * In widths of the 16:9 face, at most 72% wide and 52% of its height tall.
+   */
+  function balance(img) {
+    var a = img.naturalWidth / img.naturalHeight || 1, h16 = 9 / 16;
+    var h = 0.52 * h16 * Math.pow(a, -0.35), w = h * a;
+    if (w > 0.72) { w = 0.72; h = w / a; }
+    if (h > 0.52 * h16) { h = 0.52 * h16; w = h * a; }
+    img.style.width = (w * 100).toFixed(1) + '%';
+    img.style.height = (h / h16 * 100).toFixed(1) + '%';
+  }
+
   /** An app's face: its logo on its brand color (or its name, when the icon can't be read). */
   function face(app, box, wordSize) {
     var k = shelfKey(app);
@@ -243,6 +257,12 @@
       var img = el('img', '', box), url = app.icon;
       word.style.visibility = 'hidden';
       img.onerror = function () { if (img.parentNode) img.parentNode.removeChild(img); word.style.visibility = ''; };
+      if (url.indexOf('icons/') === 0) {   // ours: vector, already cropped and tinted for the tile, so never lifted
+        img.className = 'logo';
+        img.onload = function () { balance(img); };
+        img.src = url;
+        return;
+      }
       if (lifted[url]) { showLogo(img, box, top, bottom, lifted[url], !k); return; }
       if (lifted[url] !== false) {
         img.onload = function () {
