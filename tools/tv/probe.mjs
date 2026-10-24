@@ -1,0 +1,10 @@
+const pages = await (await fetch(`http://${process.env.TV || '10.0.0.102'}:9998/json/list`)).json();
+const ws = new WebSocket(pages.find(p => p.description === 'io.freemytv').webSocketDebuggerUrl);
+await new Promise(r => ws.onopen = r);
+let id = 0; const w = new Map();
+ws.onmessage = m => { const x = JSON.parse(m.data); if (w.has(x.id)) { w.get(x.id)(x); w.delete(x.id); } };
+const send = (method, params = {}) => new Promise(ok => { const i = ++id; w.set(i, ok); ws.send(JSON.stringify({ id: i, method, params })); });
+const expr = process.argv[2];
+const r = await send('Runtime.evaluate', { expression: expr, returnByValue: true, awaitPromise: true });
+console.log(JSON.stringify(r.result.result.value ?? r.result, null, 1));
+ws.close();

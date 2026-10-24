@@ -80,7 +80,19 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   -webkit-transition: -webkit-transform 0.38s cubic-bezier(0.32, 0.72, 0.2, 1), opacity 0.28s;
   transition: transform 0.38s cubic-bezier(0.32, 0.72, 0.2, 1), opacity 0.28s;
 }
+
+/*
+ * Layers: 4K TVs draw this stage at twice its size (devicePixelRatio 2). Without layers of their own, the home screen
+ * and its focusable parts are painted into the background's full-screen layer, and every focus change repaints it.
+ * Each one on its own layer, focus only scales it on the GPU.
+ */
+#home, .tab, .round, .card, .tile, .key, .cell .face { will-change: transform; }
+/* What fades in after it was hidden is drawn ahead of time: drawn when it shows, it costs the frames of its first moment. */
+#drawer { will-change: transform, opacity; }
+#top, .card::before, .card .img::after { will-change: opacity; }
 .drawer-open #home { -webkit-transform: translateY(-560px); transform: translateY(-560px); }
+#home, #drawer { -webkit-transition-duration: 0.3s, 0.22s; transition-duration: 0.3s, 0.22s; }
+.drawer-open #home, .drawer-open #drawer { -webkit-transition-duration: 0.38s, 0.28s; transition-duration: 0.38s, 0.28s; }
 #top { -webkit-transition: opacity 0.2s; transition: opacity 0.2s; }
 .drawer-open #top { opacity: 0; }
 #drawer { -webkit-transform: translateY(560px); transform: translateY(560px); opacity: 0; }
@@ -118,8 +130,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   font-weight: 500;
   line-height: 68px;
   color: #6E6E73;
-  -webkit-transition: -webkit-transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), background-color 0.17s, box-shadow 0.2s, color 0.17s;
-  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), background-color 0.17s, box-shadow 0.2s, color 0.17s;
+  -webkit-transition: -webkit-transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), background-color 0.17s, box-shadow 0.2s, color 0.17s;
+  transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), background-color 0.17s, box-shadow 0.2s, color 0.17s;
 }
 .tab.on { font-weight: 600; color: #1D1D1F; }
 .tab.focus {
@@ -164,8 +176,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   background: linear-gradient(rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.5));
   box-shadow: 0 6px 26px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
   color: #1D1D1F;
-  -webkit-transition: -webkit-transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.2s, background-color 0.17s;
-  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.2s, background-color 0.17s;
+  -webkit-transition: -webkit-transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.2s, background-color 0.17s;
+  transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.2s, background-color 0.17s;
 }
 .round .sym { position: absolute; left: 20px; top: 20px; width: 28px; height: 28px; }
 .round.focus { background: #FFF; -webkit-transform: scale(1.1); transform: scale(1.1); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24); }
@@ -200,8 +212,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   position: absolute;
   top: 262px;
   height: 442px;
-  -webkit-transition: -webkit-transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15);
-  transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+  -webkit-transition: -webkit-transform 0.18s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1);
 }
 .card .img {
   position: absolute;
@@ -215,9 +227,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   background-size: cover;
   background-position: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
-  -webkit-transition: box-shadow 0.22s;
-  transition: box-shadow 0.22s;
 }
+.card::before { border-radius: 18px; box-shadow: 0 24px 46px rgba(0, 0, 0, 0.3); }
+.night .card::before { box-shadow: 0 24px 46px rgba(0, 0, 0, 0.5); }
 .card .img::after {
   content: '';
   position: absolute;
@@ -234,7 +246,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   transition: opacity 0.17s;
 }
 .card.focus { -webkit-transform: translateY(-6px) scale(1.05); transform: translateY(-6px) scale(1.05); z-index: 2; }
-.card.focus .img { box-shadow: 0 24px 46px rgba(0, 0, 0, 0.34); }
 .card.focus .img::after { opacity: 1; }
 .card .name {
   position: absolute;
@@ -314,12 +325,31 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   top: 854px;
   height: 126px;
   border-radius: 22px;
-  overflow: hidden;
   color: #FFF;
   box-shadow: 0 4px 22px rgba(0, 0, 0, 0.14);
-  -webkit-transition: -webkit-transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.2s, opacity 0.3s;
-  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.2s, opacity 0.3s;
+  -webkit-transition: -webkit-transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.3s;
+  transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.3s;
 }
+/*
+ * Focus shadows (tiles, keys, picks): a box with the focused shadow that fades in. Opacity animates on the GPU;
+ * box-shadow would repaint the item every frame, four times the pixels on a 4K TV.
+ */
+.tile::before, .key::before, .card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  -webkit-transition: opacity 0.2s;
+  transition: opacity 0.2s;
+}
+.tile.focus::before, .key.focus::before, .card.focus::before { opacity: 1; }
+/* The shadow comes in with the lift and leaves faster than it came (exits are quicker than entrances). */
+.tile::before, .key::before, .card::before { -webkit-transition-duration: 0.12s; transition-duration: 0.12s; }
+.tile.focus::before, .key.focus::before, .card.focus::before { -webkit-transition-duration: 0.18s; transition-duration: 0.18s; }
+.tile::before { border-radius: 22px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3); }
 .tile img { position: absolute; left: 50%; top: 50%; max-width: 76%; max-height: 62%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); }
 /* a logo lifted off the TV's icon (home.js): as large as the tile allows */
 .tile img.logo { width: 70%; height: 50%; max-width: none; max-height: none; object-fit: contain; }
@@ -346,16 +376,17 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   top: 0;
   right: 0;
   height: 50%;
+  border-radius: 22px 22px 0 0;
   background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
   background: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
   opacity: 0;
   -webkit-transition: opacity 0.17s;
   transition: opacity 0.17s;
 }
-.tile.focus { -webkit-transform: scale(1.2); transform: scale(1.2); box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34); z-index: 2; }
+.tile.focus { -webkit-transform: scale(1.2); transform: scale(1.2); z-index: 2; }
 .tile.focus::after { opacity: 1; }
 .night .tile { box-shadow: 0 4px 22px rgba(0, 0, 0, 0.3); }
-.night .tile.focus { box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6); }
+.night .tile::before { box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55); }
 .more { position: absolute; width: 17px; height: 17px; color: rgba(0, 0, 0, 0.6); }
 .more.back { -webkit-transform: scaleX(-1); transform: scaleX(-1); }
 .night .more { color: rgba(255, 255, 255, 0.8); }
@@ -383,13 +414,14 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   border-radius: 20px;
   text-align: center;
   color: #1D1D1F;
-  -webkit-transition: -webkit-transform 0.19s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.19s, background-color 0.14s;
-  transition: transform 0.19s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.19s, background-color 0.14s;
+  -webkit-transition: -webkit-transform 0.18s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1);
 }
+.key::before { border-radius: 20px; background: #F5F5F7; box-shadow: 0 16px 34px rgba(0, 0, 0, 0.42); }
 .key .sym { position: absolute; left: 50%; top: 33px; width: 34px; height: 34px; margin-left: -17px; }
 .key .label { position: absolute; left: 8px; right: 8px; top: 82px; font-size: 23px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .key.off { color: #8E8E93; }
-.key.focus { background: #F5F5F7; color: #1C1C1E; -webkit-transform: scale(1.07); transform: scale(1.07); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.42); z-index: 2; }
+.key.focus { color: #1C1C1E; -webkit-transform: scale(1.07); transform: scale(1.07); z-index: 2; }
 .night .key { color: rgba(255, 255, 255, 0.95); }
 .night .key.off { color: rgba(255, 255, 255, 0.42); }
 .night .key.focus { color: #1C1C1E; }
@@ -456,8 +488,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   border-radius: 22px;
   overflow: hidden;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
-  -webkit-transition: -webkit-transform 0.19s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.19s;
-  transition: transform 0.19s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.19s;
+  -webkit-transition: -webkit-transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.19s;
+  transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.19s;
 }
 .cell .face img { position: absolute; left: 50%; top: 50%; max-width: 70%; max-height: 60%; -webkit-transform: translate(-50%, -50%); transform: translate(-50%, -50%); }
 .cell .face img.logo { width: 64%; height: 46%; max-width: none; max-height: none; object-fit: contain; }
