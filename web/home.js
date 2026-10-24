@@ -75,6 +75,9 @@
 
   /** Shelf apps in this order when installed, like the Android app: key, LG app id, name on the TV, brand gradient. */
   var SHELF = [
+    ['playstation', /^(?!)/, /^ps\d$/i, ['#0070D1', '#00296B']],
+    ['xbox', /^(?!)/, /^xbox$/i, ['#1E9E1E', '#0B5C0B']],
+    ['switch', /^(?!)/, /^switch$/i, ['#E60012', '#99000C']],
     ['netflix', /^netflix$/, /netflix/i, ['#0A0A0A', '#000000']],
     ['youtube', /youtube/, /^youtube$/i, ['#1C1C1E', '#09090A']],
     ['prime', /^amazon$/, /prime video|amazon/i, ['#2AA8FF', '#0A68D4']],
@@ -92,6 +95,30 @@
   // Apps shown at once, as on Android: 8 (today's smallest tiles, 178 wide); the shelf scrolls for the rest. The
   // built-in list keeps 8 too.
   var SHELF_VISIBLE = 8, FEW_APPS = 8;
+
+  // Game consoles on the TV's inputs, by the name HDMI-CEC gives them ("PS5 Console de Games"): on the shelf like an
+  // app, under a short name and with their logo where there is one, since they're why the TV is on half the time.
+  var CONSOLES = [
+    [/\bps5\b|playstation ?5/i, 'PS5', 'icons/playstation.svg'], [/\bps4\b|playstation ?4/i, 'PS4', 'icons/playstation.svg'],
+    [/xbox/i, 'Xbox', ''], [/nintendo|switch/i, 'Switch', '']
+  ];
+  var AUDIO = /sound ?bar|receiver|home theat|amplifier|speaker/i;
+
+  function consoleOf(input) {
+    if (input.key === 'live') return null;
+    for (var i = 0; i < CONSOLES.length; i++) if (CONSOLES[i][0].test(input.label || '')) return CONSOLES[i];
+    return null;
+  }
+
+  /** The consoles plugged in, as shelf apps that open their input. */
+  function consoles(list) {
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var c = consoleOf(list[i]);
+      if (c && list[i].connected) out.push({id: list[i].id, title: c[1], icon: c[2], color: '', input: true});
+    }
+    return out;
+  }
 
   function shelfKey(app) {
     for (var i = 0; i < SHELF.length; i++) if (SHELF[i][1].test(app.id) || SHELF[i][2].test(app.title)) return SHELF[i];
@@ -295,6 +322,19 @@
     if (chosen) {
       for (var i = 0; i < chosen.length; i++) {
         for (var j = 0; j < apps.length; j++) if (apps[j].id === chosen[i]) out.push(apps[j]);
+      }
+      // A console plugged in after the shelf was edited goes first, once: taken out in Shelf, it stays out.
+      var offered = Prefs.offered(), added = false;
+      for (var k = apps.length - 1; k >= 0; k--) {
+        if (apps[k].input && chosen.indexOf(apps[k].id) < 0 && offered.indexOf(apps[k].id) < 0) {
+          out.unshift(apps[k]);
+          offered.push(apps[k].id);
+          added = true;
+        }
+      }
+      if (added) {
+        Prefs.set('offered', offered);
+        Prefs.set('shelf', out.map(function (x) { return x.id; }));
       }
     } else {
       for (var s = 0; s < SHELF.length && out.length < FEW_APPS; s++) {
@@ -542,8 +582,11 @@
     d.innerHTML = '';
     drawerItems = [];
     for (var i = 0; i < inputs.length; i++) {
-      var x = inputs[i];
-      drawerItems.push({label: x.label || tr('Live TV'), symbol: x.symbol, off: !x.connected, run: launcher(x.id, x.label)});
+      var x = inputs[i], c = consoleOf(x);
+      var audio = AUDIO.test(x.label || ''), symbol = c ? 'gamepad' : audio ? 'speaker' : x.symbol;
+      // "Samsung Sound Bar", "PS5 Console de Games": what it is, short
+      var label = c ? c[1] : audio && /sound ?bar/i.test(x.label) ? 'Soundbar' : x.label || tr('Live TV');
+      drawerItems.push({label: label, symbol: symbol, off: !x.connected, run: launcher(x.id, x.label)});
     }
     drawerInputs = drawerItems.length;
     drawerItems.push({label: tr('All Apps'), symbol: 'apps', run: openApps});
@@ -1141,11 +1184,12 @@
 
   function loadApps(done) {
     TV.apps(function (list) {
-      apps = list.filter(function (a) { return !hidden(a); });
-      Data.setApps(apps);
-      pickShelf();
+      list = list.filter(function (a) { return !hidden(a); });
+      Data.setApps(list);
       TV.inputs(function (list2) {
         inputs = list2;
+        apps = consoles(list2).concat(list);
+        pickShelf();
         if (done) done();
       });
     });

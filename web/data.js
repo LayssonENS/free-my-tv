@@ -50,6 +50,8 @@ var Prefs = (function () {
     quotes: function () { return pick('quotes', CONFIG.showCrypto !== false); },
     coin: function (i) { var c = pick('coins', null); return c ? c[i] !== false : true; },
     shelf: function () { return pick('shelf', null); },
+    /** The consoles the shelf has taken in once (so one taken out stays out). */
+    offered: function () { return pick('offered', []).slice(); },
     set: function (name, value) { v[name] = value; save(); this.version++; },
     setCoin: function (i, on) {
       var c = (pick('coins', null) || [true, true, true, true]).slice();
