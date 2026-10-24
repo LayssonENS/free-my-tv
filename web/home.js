@@ -58,6 +58,19 @@
     stage.style.webkitTransform = stage.style.transform = s === 1 ? '' : 'scale(' + s + ')';
   }
 
+  // OLED: nothing should sit on the same pixels for hours. The home screen and the drawer drift around a circle 6
+  // pixels wide, once an hour, in whole pixels: about one step every two minutes, too slow to see (LG's Screen Shift
+  // does the same). CSS translate adds to the drawer's transform and only moves their layers; older TVs ignore it.
+  function drift(amplitude, period) {
+    var t = Date.now() % period / period * 2 * Math.PI;
+    return [Math.round(amplitude * Math.cos(t)), Math.round(amplitude * Math.sin(t))];
+  }
+
+  function shift() {
+    var d = drift(6, 3600000), t = d[0] + 'px ' + d[1] + 'px';
+    if ($('home').style.translate !== t) $('home').style.translate = $('drawer').style.translate = t;
+  }
+
   // MARK: - Apps on the shelf
 
   /** Shelf apps in this order when installed, like the Android app: key, LG app id, name on the TV, brand gradient. */
@@ -1014,7 +1027,7 @@
     setClass(body, 'night', night);
     if (night === lastNight) return;
     lastNight = night;
-    document.documentElement.style.background = night ? '#0B0B0D' : '';
+    document.documentElement.style.background = night ? '#000' : '';
     try { localStorage.setItem('fmtv.night', night ? 'true' : 'false'); } catch (e) {}   // for index.html, next start
   }
 
@@ -1053,10 +1066,20 @@
         }, 60);
       }
       tickSaverClock(clock);
+      moveSaverClock(clock);
       saverTimer = setTimeout(next, 12000);
     }
     setClass(s, 'on', true);
     next();
+  }
+
+  /** OLED: the clock is the brightest thing that stays; it fades to the other corner every ten minutes, and drifts. */
+  function moveSaverClock(clock) {
+    var right = Math.floor(Date.now() / 600000) % 2 === 1, d = drift(24, 7 * 60000);
+    clock.style.webkitTransform = clock.style.transform = 'translate(' + d[0] + 'px, ' + d[1] + 'px)';
+    if (hasClass(clock, 'right') === right) return;
+    setClass(clock, 'away', true);
+    setTimeout(function () { setClass(clock, 'right', right); setClass(clock, 'away', false); }, 700);
   }
 
   function tickSaverClock(clock) {
@@ -1166,6 +1189,7 @@
   // LG's screensaver waits only when ours will show: not under a sheet (ours waits there), and not without photos.
   TV.holdScreenSaver(function () { return !sheetOpen() && saverPhotos().length > 0; });
   fit();
+  shift();
   renderTop();
   tickClock();
   loadApps(function () {
@@ -1173,6 +1197,7 @@
     Data.refresh();
   });
   setInterval(function () {
+    shift();
     checkNight();
     Data.refresh();
     if (!saverOn && !sheetOpen() && Date.now() - idleAt > SAVER_AFTER) showSaver();
