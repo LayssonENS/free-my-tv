@@ -162,6 +162,19 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 #quotes .q { display: inline-block; margin-left: 24px; }
 #quotes svg { width: 15px; height: 15px; vertical-align: -1px; margin-right: 6px; fill: rgba(142, 142, 147, 0.7); }
 #quotes.hide { opacity: 0; }
+
+/* The team's next match: its crests, the names in the text's color, then when and the cup. Live, the score and a dot. */
+#quotes .match img { width: 30px; height: 30px; vertical-align: -8px; margin: 0 10px; }
+#quotes .match .team { color: #1D1D1F; font-weight: 600; }
+#quotes .match .vs { margin: 0 8px; }
+#quotes .match .when, #quotes .match .cup { margin-left: 22px; }
+#quotes .match .cup { color: #A1A1A6; }
+#quotes .match.live .vs { color: #1D1D1F; font-weight: 700; }
+#quotes .match.live .when { color: #D70015; font-weight: 600; }
+#quotes .match.live .when::before { content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 5px; background: #FF3B30; margin-right: 9px; vertical-align: 1px; }
+.night #quotes .match .team, .night #quotes .match.live .vs { color: #F5F5F7; }
+.night #quotes .match .cup { color: rgba(245, 245, 247, 0.45); }
+.night #quotes .match.live .when { color: #FF453A; }
 .night #quotes { color: rgba(245, 245, 247, 0.62); }
 .night #quotes svg { fill: rgba(245, 245, 247, 0.55); }
 

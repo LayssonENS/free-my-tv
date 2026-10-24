@@ -210,5 +210,12 @@
  "{n} h ago": "há {n} h",
  "{n} min ago": "há {n} min",
  "{n} ms": "{n} ms",
- "← → to move · OK to drop · Back to cancel": "← → para mover · OK para soltar · Voltar para cancelar"
+ "← → to move · OK to drop · Back to cancel": "← → para mover · OK para soltar · Voltar para cancelar",
+ "Today": "Hoje",
+ "Tomorrow": "Amanhã",
+ "format|EEE": "EEE",
+ "format|MMM d": "d 'de' MMM",
+ "match|Full time": "Encerrado",
+ "match|Live": "Ao vivo",
+ "{day} at {time}": "{day} às {time}"
 }

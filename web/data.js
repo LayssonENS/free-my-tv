@@ -209,6 +209,59 @@ var Data = (function () {
     })(0);
   }
 
+  // MARK: - The team's next match (ESPN's public API: no key, open to any page)
+
+  var TEAM = String(CONFIG.soccerTeam || '').trim();
+  var ESPN = 'https://site.api.espn.com/apis/site/v2/sports/soccer/';
+  var match = null, matchAt = 0, fetchingMatch = false;
+  (function () {
+    var m = stored('match');
+    if (m && m.team === TEAM) { match = m.match; matchAt = m.at; }
+  })();
+
+  // ESPN's crests are 500 pixels: its resizer sends them at twice the size the top row draws them.
+  function crest(team) {
+    var href = (team.logos && team.logos[0] && team.logos[0].href) || team.logo || '';
+    var path = href.replace(/^https?:\/\/a\.espncdn\.com/, '');
+    return path.charAt(0) === '/' ? 'https://a.espncdn.com/combiner/i?img=' + encodeURIComponent(path) + '&w=96&h=96' : href;
+  }
+
+  function parseMatch(e) {
+    var c = e && e.competitions && e.competitions[0];
+    if (!c || !c.competitors || c.competitors.length < 2) return null;
+    var sides = c.competitors.map(function (x) {
+      var score = x.score && typeof x.score === 'object' ? x.score.displayValue : x.score;
+      return {name: x.team.shortDisplayName || x.team.displayName, crest: crest(x.team), score: score === undefined ? '' : String(score), home: x.homeAway === 'home'};
+    });
+    var home = sides[0].home ? sides[0] : sides[1], away = home === sides[0] ? sides[1] : sides[0];
+    var status = c.status || {}, type = status.type || {};
+    var league = e.league || (match && match.id === e.id ? {slug: match.league, name: match.cup} : {});
+    return {id: e.id, at: Date.parse(e.date), league: league.slug || '', cup: league.name || '', home: home, away: away,
+            state: type.state || 'pre', clock: status.displayClock || ''};
+  }
+
+  /** Around kick-off and until the final whistle, the score every minute; otherwise the next fixture, twice an hour. */
+  function refreshMatch() {
+    var now = Date.now();
+    if (!TEAM || fetchingMatch) return;
+    var on = match && match.league && match.state !== 'post' && now >= match.at - 10 * 60000 && now < match.at + 4 * 3600000;
+    var over = !match || now >= match.at + 4 * 3600000 || (match.state === 'post' && now >= match.at + 3 * 3600000);
+    if (!over && now - matchAt < (on ? 60000 : 30 * 60000) && now >= matchAt) return;
+    fetchingMatch = true;
+    var url = on ? ESPN + match.league + '/scoreboard/' + match.id + '?lang=pt&region=br'
+                 : ESPN + 'all/teams/' + encodeURIComponent(TEAM) + '/schedule?fixture=true&lang=pt&region=br';
+    get(url, {}, function (err, body) {
+      fetchingMatch = false;
+      if (err || !body) return;
+      var next = on ? parseMatch(body) : parseMatch(body.events && body.events[0]);
+      matchAt = Date.now();
+      if (!next && !on) match = null;
+      else if (next) match = next;
+      store('match', {team: TEAM, match: match, at: matchAt});
+      changed();
+    });
+  }
+
   // MARK: - Picks (TMDB)
 
   var KEY = (CONFIG.tmdbKey || '').trim();
@@ -518,7 +571,9 @@ var Data = (function () {
     onChange: function (fn) { listeners.push(fn); },
     setApps: function (apps) { installed = apps; },
     appFor: appFor,
-    refresh: function () { refreshWeather(); refreshPrices(); refreshRecs(); },
+    refresh: function () { refreshWeather(); refreshPrices(); refreshMatch(); refreshRecs(); },
+    /** The team's next match, or the one on now: {at, cup, home, away: {name, crest, score}, state, clock} or null. */
+    match: function () { return match && Date.now() < match.at + 4 * 3600000 ? match : null; },
     settingsChanged: function () { pricesAt = 0; refreshPrices(); changed(); },
     get weather() { return weather; },
     get weatherAt() { return weatherAt; },

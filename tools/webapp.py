@@ -58,6 +58,7 @@ def read_config(path):
         'showCrypto': values.get('show_crypto', 'true').lower() != 'false',
         'hideAnimation': values.get('hide_animation', 'false').lower() == 'true',
         'hideApps': [s.strip() for s in values.get('hide_apps', '').split(',') if s.strip()],
+        'soccerTeam': values.get('soccer_team', '').strip(),
     }
 
 

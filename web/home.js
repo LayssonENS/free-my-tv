@@ -436,11 +436,52 @@
   function renderQuotes() {
     var q = $('quotes'), coins = Data.activeCoins();
     q.innerHTML = '';
+    renderMatch(q);
     for (var i = 0; i < coins.length; i++) {
       var item = el('span', 'q', q);
       coin(coins[i], item);
       el('span', '', item, Data.compact(Data.prices[coins[i]]));
     }
+  }
+
+  // Short names for the cups ESPN names in full, by its league id.
+  var CUPS = {
+    'bra.1': 'Brasileirão', 'bra.2': 'Série B', 'bra.copa_do_brazil': 'Copa do Brasil', 'bra.camp.carioca': 'Carioca',
+    'conmebol.libertadores': 'Libertadores', 'conmebol.sudamericana': 'Sul-Americana', 'conmebol.recopa': 'Recopa',
+    'fifa.cwc': 'Mundial de Clubes'
+  };
+
+  /** The team's next match, first in the row: both crests and names, then when it starts, or the score while it's on. */
+  function renderMatch(row) {
+    var m = Data.match();
+    if (!m) return;
+    var item = el('span', 'q match' + (m.state === 'in' ? ' live' : ''), row);
+    team(m.home, item, false);
+    el('span', 'vs', item, m.state === 'pre' ? '×' : m.home.score + ' × ' + m.away.score);
+    team(m.away, item, true);
+    var when = m.state === 'in' ? tr('match|Live') + (m.clock ? ' · ' + m.clock : '') : m.state === 'post' ? tr('match|Full time') : kickoff(m.at);
+    el('span', 'when', item, when);
+    var cup = CUPS[m.league] || m.cup;
+    if (cup) el('span', 'cup', item, cup);
+  }
+
+  function team(t, item, crestAfter) {
+    var crest = null;
+    if (t.crest && !crestAfter) crest = el('img', '', item);
+    el('span', 'team', item, t.name);
+    if (t.crest && crestAfter) crest = el('img', '', item);
+    if (crest) {
+      crest.onerror = function () { if (crest.parentNode) crest.parentNode.removeChild(crest); };
+      crest.src = t.crest;
+    }
+  }
+
+  /** "Today at 20:00", "Tomorrow at 20:00", "Sat at 16:00" this week, "Nov 4 at 19:30" after. */
+  function kickoff(at) {
+    var d = new Date(at), n = new Date();
+    var days = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(n.getFullYear(), n.getMonth(), n.getDate())) / 86400000);
+    var day = days === 0 ? tr('Today') : days === 1 ? tr('Tomorrow') : days > 1 && days < 7 ? formatDate('format|EEE', at) : formatDate('format|MMM d', at);
+    return trf('{day} at {time}', {day: day.charAt(0).toUpperCase() + day.substring(1), time: Data.time(at)});
   }
 
   // MARK: - Picks and background
